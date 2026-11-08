@@ -1,0 +1,40 @@
+{
+  "operations": [
+    {
+      "role": "planner",
+      "tool": "inspect_workspace",
+      "arguments": {
+        "path": "."
+      }
+    },
+    {
+      "role": "planner",
+      "tool": "propose_plan",
+      "arguments": {
+        "plan": "inspect, apply normalize_label patch, then review"
+      }
+    },
+    {
+      "role": "implementer",
+      "tool": "apply_patch",
+      "arguments": {
+        "files": [
+          "src/labels.py"
+        ],
+        "patch": "swarm001_normalize_label"
+      }
+    },
+    {
+      "role": "reviewer",
+      "tool": "git_diff",
+      "arguments": {}
+    },
+    {
+      "role": "reviewer",
+      "tool": "run_tests",
+      "arguments": {
+        "command": "swarm001_acceptance"
+      }
+    }
+  ]
+}

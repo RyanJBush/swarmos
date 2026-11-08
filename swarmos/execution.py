@@ -25,8 +25,11 @@ def execute(history, output, project, memory_enabled=False, operations=None, pro
                 memory_source_run=recalled['source_run'] if recalled else None,
                 execution_ms=round((perf_counter() - started) * 1000, 3))
     history.finish(run, result, data)
-    if memory_enabled and result.completed:
-        memory.remember(run.id)
-    evidence.export(history, run.id, output)
-    render(history, run.id, output)
+    try:
+        if memory_enabled and result.completed:
+            memory.remember(run.id)
+        evidence.export(history, run.id, output)
+        render(history, run.id, output)
+    except Exception as error:
+        raise RuntimeError(f'Run {run.id} is durable; post-processing failed: {error}') from error
     return data

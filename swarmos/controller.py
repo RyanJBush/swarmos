@@ -39,7 +39,7 @@ ROLE_TOOL_ALLOWLIST: dict[Role, frozenset[str]] = {
 
 _ROLE_ORDER = (Role.PLANNER, Role.IMPLEMENTER, Role.REVIEWER)
 _FIXTURE_MARKER = ".swarmos-phase1-fixture"
-_ACCEPTANCE_SHA256 = "6FB9D0D6D029A0EBA36F01FF9FBA30AE9CA2D3BA0ABEA31B2DB510C0BDF279E7"
+_ACCEPTANCE_SHA256 = "BA22D4B8C9BEF2926ACFACD1DBF2D6E4765194E26B395B4240F09885FD469EFE"
 _EXPECTED_ACCEPTANCE_TESTS = 1
 _OWNED_FIXTURES: set[Path] = set()
 
@@ -393,7 +393,7 @@ class BoundedController:
         candidate = self._acceptance_test.resolve(strict=True)
         if candidate != expected:
             raise ValueError("acceptance test is not the trusted project test")
-        digest = hashlib.sha256(candidate.read_bytes()).hexdigest().upper()
+        digest = hashlib.sha256(candidate.read_bytes().replace(b"\r\n", b"\n")).hexdigest().upper()
         if digest != _ACCEPTANCE_SHA256:
             raise ValueError("acceptance test integrity check failed")
         return expected
@@ -431,7 +431,7 @@ def demo_operations() -> tuple[Operation, ...]:
 
 def _run_git(cwd: Path, *args: str) -> str:
     completed = subprocess.run(
-        ["git", *args],
+        ["git", "-c", "core.longpaths=true", *args],
         cwd=cwd,
         capture_output=True,
         text=True,
