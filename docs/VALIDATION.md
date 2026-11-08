@@ -105,3 +105,11 @@ Claude Code 2.1.319 returned `Connected` from an isolated MCP configuration.
 See CLIENT-VERIFICATION.md for the distinction between connection verification and
 an untested model-driven conversation. MIT licensing and public visibility remain
 proposals requiring the owner's decision.
+
+## Approved public release
+
+On November 7, 2026 (America/New_York), the owner explicitly approved applying
+the proposed MIT license and making RyanJBush/swarmos public. The approved text
+was copied to the root LICENSE without changing its terms. This follow-up changes
+licensing and documentation only; the tested implementation remains unchanged.
+Earlier references to private visibility describe the preceding publication stage.

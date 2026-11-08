@@ -120,6 +120,6 @@ Read the [architecture](docs/ARCHITECTURE.md), [security boundaries](SECURITY.md
 ## Publication status
 
 Continues checkpoint `eff728e2c3d5d1355c0271036202e034e62a0ef6`.
-Published with owner approval to the private repository [RyanJBush/swarmos](https://github.com/RyanJBush/swarmos). The seven prepared commits were transferred with identical Git hashes; the verified implementation checkpoint is `bd4dd2d`. Public visibility still requires separate approval.
+Published with owner approval to the public repository [RyanJBush/swarmos](https://github.com/RyanJBush/swarmos). The seven prepared commits were transferred with identical Git hashes; the verified implementation checkpoint is `bd4dd2d`. Public visibility and MIT licensing were explicitly approved by the owner.
 Generated evidence, local databases and journals, credentials, and environments
-are excluded by `.gitignore`. An [MIT license proposal](docs/LICENSE-PROPOSAL.md) is ready for owner approval. No license grant or public visibility change has been applied.
+are excluded by `.gitignore`. Licensed under the [MIT License](LICENSE), copyright 2026 Ryan Bush.
