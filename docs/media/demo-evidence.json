@@ -1,0 +1,33 @@
+{
+  "recorded_at": "2026-11-08T01:46:16.002Z",
+  "first_run": {
+    "run_id": "4a6a9552-51f7-4fc0-aba9-d616dc4bde77",
+    "completed": true,
+    "memory_hit": false
+  },
+  "second_run": {
+    "run_id": "9b05e931-b546-44af-8c56-4d3e0f6a90c6",
+    "completed": true,
+    "memory_hit": true
+  },
+  "evaluation": {
+    "off": {
+      "runs": 3,
+      "successes": 3,
+      "memory_hits": 0,
+      "median_execution_ms": 899.732,
+      "mean_steps": 5,
+      "patch_attempts": 3
+    },
+    "on": {
+      "runs": 3,
+      "successes": 3,
+      "memory_hits": 3,
+      "median_execution_ms": 898.485,
+      "mean_steps": 5,
+      "patch_attempts": 3
+    }
+  },
+  "baseline_exit_code": 1,
+  "verification": "Evidence matches durable run payload."
+}

@@ -1,3 +1,27 @@
+# Recorded demonstration
+
+Watch [the 2-minute-52-second captioned recording](media/swarmos-demo.webm) and inspect
+[the actual metrics used in it](media/demo-evidence.json). The screenshot in the
+README is captured from the generated run timeline. These curated presentation
+assets are intentionally versioned; raw runtime evidence and databases remain ignored.
+
+## Regenerate the recording
+
+Optional tooling: Node.js, Playwright, and its Chromium/FFmpeg downloads.
+These are presentation tools, not runtime dependencies. From the checkout:
+
+```powershell
+npm install --no-save --package-lock=false playwright
+npx playwright install chromium
+node scripts/record_demo.cjs .venv/Scripts/python.exe
+```
+
+The script executes two real memory-enabled runs in a fresh project, a separate
+three-trial paired evaluation and an evidence verification. It then records a local
+browser walkthrough of those captured results. Runtime is about three minutes.
+It uses no voice synthesis, model API, remote page, or credentials. On Linux/macOS,
+pass `.venv/bin/python`. GitHub may offer WebM as a download; open it in a browser.
+
 # Three-minute demonstration
 
 From the repository root, with dependencies installed:
@@ -32,3 +56,5 @@ specified by `--basetemp`; use a disposable directory only.
 
 Attach actual test counts and evaluation results only with their scope and evidence.
 Do not describe this implementation as a sandboxed autonomous coding agent.
+
+The published recording was checked in Chromium: 172 seconds, 1440×900. It was compressed to one frame per second for these mostly static evidence screens. Scene hold times total 150 seconds; browser rendering adds overhead. The original recording remains in ignored local evidence.

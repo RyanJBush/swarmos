@@ -11,6 +11,18 @@ This is a deterministic agent-workflow engineering MVP. It does **not** generate
 arbitrary code, use an LLM, or provide an operating-system sandbox. The planner's
 inspection action is currently a validated path acknowledgement, not semantic repo analysis.
 
+## Watch the demo
+
+[Watch the captioned 2-minute-52-second demonstration](docs/media/swarmos-demo.webm).
+It shows actual local run outputs, the timeline, paired memory evaluation, and
+evidence verification. [Recorded metrics](docs/media/demo-evidence.json) are
+included for traceability. The recording has captions rather than voice narration.
+
+![Actual SwarmOS run timeline](docs/media/timeline.png)
+
+Claude Code 2.1.319 successfully connected to the local MCP server in an isolated
+configuration. See [client verification and its limits](docs/CLIENT-VERIFICATION.md).
+
 ## Quick start
 
 Requirements: Git on PATH and Python 3.11+. Run commands from this source checkout;
@@ -110,5 +122,4 @@ Read the [architecture](docs/ARCHITECTURE.md), [security boundaries](SECURITY.md
 Continues checkpoint `eff728e2c3d5d1355c0271036202e034e62a0ef6`.
 Published with owner approval to the private repository [RyanJBush/swarmos](https://github.com/RyanJBush/swarmos). The seven prepared commits were transferred with identical Git hashes; the verified implementation checkpoint is `bd4dd2d`. Public visibility still requires separate approval.
 Generated evidence, local databases and journals, credentials, and environments
-are excluded by `.gitignore`. No license is selected yet; choose one before
-advertising the project as open source.
+are excluded by `.gitignore`. An [MIT license proposal](docs/LICENSE-PROPOSAL.md) is ready for owner approval. No license grant or public visibility change has been applied.

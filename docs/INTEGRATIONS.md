@@ -43,3 +43,7 @@ with a named desktop client. The verified boundary is a real local subprocess
 handshake and tools listing, plus direct handler tests for scoped reads, rejected
 writes/arguments, malformed frames and read-only SQLite. Full MCP conformance and
 live Claude/ChatGPT/Ollama interoperability remain unverified.
+
+## Subsequent real-client check
+
+Claude Code 2.1.319 successfully connected in an isolated configuration. See [CLIENT-VERIFICATION.md](CLIENT-VERIFICATION.md) for the observed result, reproduction steps and limits. Model-driven tool invocation and Claude Desktop remain unverified.

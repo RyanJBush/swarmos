@@ -93,3 +93,15 @@ compatibility, autonomous coding performance, or sandbox isolation.
 
 The follow-up documentation-only commit records these results and uses `[skip ci]`;
 it does not change the tested implementation. The repository remains private.
+
+## Presentation and client-verification follow-up
+
+A real timeline screenshot, captioned 2-minute-52-second recording, and compact JSON
+measurement record were added. The recorder runs the workflow and evaluation
+before presenting their actual outputs. A repeated local regression check passed
+**48 tests, with 1 expected skip, in 20.27 seconds**. No controller behavior changed.
+
+Claude Code 2.1.319 returned `Connected` from an isolated MCP configuration.
+See CLIENT-VERIFICATION.md for the distinction between connection verification and
+an untested model-driven conversation. MIT licensing and public visibility remain
+proposals requiring the owner's decision.

@@ -32,3 +32,6 @@ htmlcov/
 *.egg-info/
 build/
 dist/
+
+# Optional presentation tooling
+node_modules/
