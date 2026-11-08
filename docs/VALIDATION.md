@@ -64,7 +64,7 @@ successful rerun.
 
 ## Publication limits
 
-No remote repository was created, no push occurred, and no visibility was changed.
+At the initial local checkpoint, no remote repository had been created and no push had occurred. See the publication addendum below for subsequent authorized work.
 No full protocol-conformance, live LLM, adversarial sandbox, or external client
 compatibility claim is made. Publication should include a license decision and
 remote CI verification after the owner authorizes pushing.
@@ -76,3 +76,20 @@ Publication audit found ignored generated evidence and bytecode in inherited pre
 A later clean-publication-checkout test exposed a second long-path case at Git initialization (47 passed, 1 failed, 1 skipped). Fixtures were moved to short project-local `.swarmos/work/` paths; the final clean-checkout result below supersedes that failed attempt.
 
 Final clean publication checkout after the fixture-path fix: **48 passed, 1 skipped in 23.53 s**. A fresh three-trial evaluation passed 3/3 per arm, with 0 versus 3 memory hits and five steps per run. Median execution times were 936.650 ms (off) and 937.184 ms (on), illustrating why no latency improvement is claimed. Report: `evidence/final/evaluation-bc51009b5d0846e08ab4288967ffef25/evaluation.json` in the publication checkout.
+
+## Authorized private publication and CI
+
+On November 7, 2026 (America/New_York), the owner approved creation and publication
+of `RyanJBush/swarmos` as a **private** repository. All seven prepared commit objects
+were transferred through the authenticated GitHub API, with every tree and commit
+SHA checked against the local checkout. Implementation HEAD: `bd4dd2d01f90e4445524d5caa2a99ec5ed0a9305`.
+
+[GitHub Actions run 42434894375](https://github.com/RyanJBush/swarmos/actions/runs/42434894375)
+passed all four matrix jobs: Windows and Ubuntu, each on Python 3.11 and 3.13.
+Each job completed a clean dependency installation, pytest suite, deterministic demo,
+and one-trial-per-arm memory evaluation. No workflow failures remained.
+This verifies the configured CI environments; it does not establish live LLM client
+compatibility, autonomous coding performance, or sandbox isolation.
+
+The follow-up documentation-only commit records these results and uses `[skip ci]`;
+it does not change the tested implementation. The repository remains private.

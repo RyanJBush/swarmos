@@ -100,7 +100,7 @@ conformance or compatibility with every client is made. See [integration details
 - Trusted acceptance file integrity check, actual Git diff and pytest subprocess.
 - Transaction rollback, restart, concurrent initialization, export repair tests.
 - Project isolation, memory-off control, rejected-operation tracing, escaped HTML.
-- CI matrix for Windows/Linux and Python 3.11/3.13; remote CI awaits publication.
+- CI matrix for Windows/Linux and Python 3.11/3.13; [view workflow results](https://github.com/RyanJBush/swarmos/actions/workflows/ci.yml).
 
 Read the [architecture](docs/ARCHITECTURE.md), [security boundaries](SECURITY.md),
 [validation record](docs/VALIDATION.md), and [three-minute demo](docs/DEMO.md).
@@ -108,8 +108,7 @@ Read the [architecture](docs/ARCHITECTURE.md), [security boundaries](SECURITY.md
 ## Publication status
 
 Continues checkpoint `eff728e2c3d5d1355c0271036202e034e62a0ef6`.
-Local focused commits are prepared; no GitHub repository has been created or pushed
-by this development session. Publication requires the owner's approval.
+Published with owner approval to the private repository [RyanJBush/swarmos](https://github.com/RyanJBush/swarmos). The seven prepared commits were transferred with identical Git hashes; the verified implementation checkpoint is `bd4dd2d`. Public visibility still requires separate approval.
 Generated evidence, local databases and journals, credentials, and environments
 are excluded by `.gitignore`. No license is selected yet; choose one before
 advertising the project as open source.
