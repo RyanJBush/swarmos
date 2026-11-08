@@ -22,3 +22,9 @@ secrets.json
 coverage.xml
 .coverage
 htmlcov/
+
+.pytest-tmp*/
+.swarmos/
+*.sqlite3-*
+*.db-*
+*.sqlite-*

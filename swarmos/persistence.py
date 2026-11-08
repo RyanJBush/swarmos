@@ -8,6 +8,7 @@ share one connection and one database target.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from contextlib import contextmanager
 from datetime import datetime, timezone
 from pathlib import Path
 import sqlite3
@@ -144,6 +145,18 @@ class Database:
     def close(self) -> None:
         self.connection.close()
 
+    @contextmanager
+    def transaction(self):
+        """Serialize a complete unit of work; roll back even on interruption."""
+        self.connection.execute("BEGIN IMMEDIATE")
+        try:
+            yield
+            self.connection.execute("COMMIT")
+        except BaseException:
+            if self.connection.in_transaction:
+                self.connection.execute("ROLLBACK")
+            raise
+
     def __enter__(self) -> "Database":
         return self
 
@@ -208,7 +221,7 @@ class Database:
             connection.execute(
                 "DELETE FROM swarmos_migration_lock WHERE id = 1")
             connection.execute("COMMIT")
-        except Exception:
+        except BaseException:
             connection.execute("ROLLBACK")
             raise
 

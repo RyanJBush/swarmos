@@ -1,115 +1,63 @@
-﻿"""SwarmOS command-line entry point."""
-
+"""Local CLI; no external service credentials required."""
 import argparse
 import json
 from pathlib import Path
 import sys
-
-from .controller import run_swarm001
+from .controller import ControllerResult, TerminationCode, run_swarm001
 from .run_history import RunHistory
+from . import evidence
 
 
-def main() -> int:
-    parser = argparse.ArgumentParser(
-        description="SwarmOS autonomous coding workflow"
-    )
-    parser.add_argument(
-        "command",
-        choices=["demo", "inspect", "list"],
-        help="Command to execute"
-    )
-    parser.add_argument(
-        "--output",
-        default="evidence/demo",
-        help="Directory for run evidence"
-    )
-    parser.add_argument(
-        "--database",
-        default=".swarmos/runs.sqlite3",
-        help="SQLite path for persistent run history",
-    )
-    parser.add_argument("--run-id", help="Run ID for inspect")
-
+def main():
+    parser = argparse.ArgumentParser(description='SwarmOS bounded workflow demonstrator')
+    parser.add_argument('command', choices=['demo', 'inspect', 'list', 'export', 'verify', 'recover'])
+    parser.add_argument('--output', default='evidence/demo')
+    parser.add_argument('--database', default='.swarmos/runs.sqlite3')
+    parser.add_argument('--run-id')
     args = parser.parse_args()
-
-    if args.command == "demo":
-        output = Path(args.output)
-        output.mkdir(parents=True, exist_ok=True)
-        try:
-            with RunHistory(args.database) as history:
+    if args.command in {'inspect', 'export', 'verify', 'recover'} and not args.run_id:
+        parser.error('--run-id is required')
+    try:
+        with RunHistory(args.database) as history:
+            if args.command == 'demo':
                 run = history.start()
-                result = run_swarm001(
-                    output / "fixture",
-                    Path(__file__).parent.parent / "tests" /
-                    "test_swarm001_acceptance.py",
-                )
-                history.finish(run, result)
-        except Exception as error:
-            print(f"Persistence failure: {error}", file=sys.stderr)
-            return 1
-        evidence = {
-            "termination": result.termination.value,
-            "completed": result.completed,
-            "patches_attempted": result.patches_attempted,
-            "message": result.message,
-            "diff": result.diff,
-            "steps": [
-                {
-                    "number": step.number,
-                    "role": step.role.value,
-                    "tool": step.tool,
-                    "result": step.result,
-                }
-                for step in result.steps
-            ],
-        }
-        summary_path = output / "run-summary.json"
-        diff_path = output / "swarm001.diff"
-        if summary_path.exists():
-            summary_path = output / f"run-summary-{run.id}.json"
-        if diff_path.exists():
-            diff_path = output / f"swarm001-{run.id}.diff"
-        summary_path.write_text(
-            json.dumps(evidence, indent=2) + "\n", encoding="utf-8"
-        )
-        diff_path.write_text(result.diff, encoding="utf-8")
-        print("SwarmOS bounded demo completed.")
-        print(f"Evidence directory: {output}")
-        print(f"Run ID: {run.id}")
-        print(f"Termination: {result.termination.value}")
-        print(
-            f"Steps: {len(result.steps)}; patches: {result.patches_attempted}")
-        return 0 if result.completed else 1
-    if args.command == "inspect":
-        if not args.run_id:
-            print("--run-id is required for inspect", file=sys.stderr)
-            return 2
-        try:
-            with RunHistory(args.database) as history:
+                print(f'Run ID: {run.id}', flush=True)
+                try:
+                    result = run_swarm001(
+                        Path(args.output).resolve() / run.id / 'fixture',
+                        Path(__file__).parent.parent / 'tests' / 'test_swarm001_acceptance.py')
+                except Exception as error:
+                    result = ControllerResult(TerminationCode.OPERATION_FAILED, (), 0,
+                                              f'unexpected execution failure: {type(error).__name__}: {error}')
+                history.finish(run, result, evidence.payload(run, result))
+                root = evidence.export(history, run.id, args.output)
+                print(f'Termination: {result.termination.value}\nEvidence: {root}')
+                return 0 if result.completed else 1
+            if args.command == 'recover':
+                run, _, _ = history.get(args.run_id)
+                result = ControllerResult(TerminationCode.OPERATION_FAILED, (), 0,
+                                          'operator marked interrupted run failed; partial execution unknown')
+                history.finish(run, result, evidence.payload(run, result))
+                print('Marked failed. Export evidence with the export command.')
+            elif args.command == 'export':
+                print(evidence.export(history, args.run_id, args.output))
+            elif args.command == 'verify':
+                evidence.verify(history, args.run_id, args.output)
+                print('Evidence matches durable run payload.')
+            elif args.command == 'inspect':
                 run, tasks, events = history.get(args.run_id)
-        except KeyError as error:
-            print(str(error), file=sys.stderr)
-            return 2
-        except Exception as error:
-            print(f"Persistence failure: {error}", file=sys.stderr)
-            return 1
-        print(f"Run: {run.id}")
-        print(f"Status: {run.status}")
-        print(f"Started: {run.started_at}")
-        print(f"Finished: {run.finished_at}")
-        for event in events:
-            print(f"{event.kind}: {event.payload}")
-        return 0
-    if args.command == "list":
-        try:
-            with RunHistory(args.database) as history:
+                print(f'Run: {run.id}\nStatus: {run.status}\nStarted: {run.started_at}\nFinished: {run.finished_at}')
+                for event in events:
+                    if event.kind != 'evidence':
+                        print(f'{event.created_at} {event.kind}: {event.payload}')
+            else:
                 for run in history.recent():
-                    print(f"{run.id} {run.status} {run.started_at}")
-        except Exception as error:
-            print(f"Persistence failure: {error}", file=sys.stderr)
-            return 1
+                    print(f'{run.id} {run.status} {run.started_at}')
         return 0
+    except Exception as error:
+        print(f'{type(error).__name__}: {error}. If execution was persisted, retry export with its run ID.', file=sys.stderr)
+        return 1
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     sys.exit(main())

@@ -25,7 +25,11 @@ class RunHistory:
         database_path = Path(path)
         database_path.parent.mkdir(parents=True, exist_ok=True)
         self.database = Database(database_path)
-        self.database.migrate()
+        try:
+            self.database.migrate()
+        except BaseException:
+            self.database.close()
+            raise
         self.workflows = WorkflowRepository(self.database)
         self.runs = RunRepository(self.database)
 
@@ -39,57 +43,64 @@ class RunHistory:
         self.close()
 
     def start(self) -> Run:
-        workflow = self.workflows.get_by_name(WORKFLOW_NAME)
-        if workflow is None:
-            workflow = self.workflows.create(
-                WORKFLOW_NAME,
-                "Deterministic bounded SWARM-001 normalize_label workflow",
-            )
-        return self.runs.create(workflow.id, "running")
+        with self.database.transaction():
+            workflow = self.workflows.get_by_name(WORKFLOW_NAME)
+            if workflow is None:
+                workflow = self.workflows.create(
+                    WORKFLOW_NAME,
+                    "Deterministic bounded SWARM-001 normalize_label workflow",
+                )
+            return self.runs.create(workflow.id, "running")
 
-    def finish(self, run: Run, result: ControllerResult) -> None:
-        status = "succeeded" if result.completed else "failed"
-        agents = AgentRepository(self.database)
-        agent_ids = {
-            role: agents.create(
-                f"{role}-{run.id}", role
-            ).id
-            for role in ("planner", "implementer", "reviewer")
-        }
-        for step in result.steps:
-            self.runs.add_task(
-                run.id,
-                step.tool,
-                step.number - 1,
-                agent_ids[step.role.value],
-                "succeeded" if result.completed else "failed",
-            )
+    def finish(self, run: Run, result: ControllerResult, evidence: dict | None = None) -> None:
+        with self.database.transaction():
+            current = self.runs.get(run.id)
+            if current is None or current.status != "running":
+                raise ValueError("only an existing running run can be finalized")
+            status = "succeeded" if result.completed else "failed"
+            agents = AgentRepository(self.database)
+            agent_ids = {
+                role: agents.create(
+                    f"{role}-{run.id}", role
+                ).id
+                for role in ("planner", "implementer", "reviewer")
+            }
+            for step in result.steps:
+                self.runs.add_task(
+                    run.id,
+                    step.tool,
+                    step.number - 1,
+                    agent_ids[step.role.value],
+                    "succeeded",
+                )
+                self.runs.add_event(
+                    run.id,
+                    "step",
+                    json.dumps(
+                        {
+                            "sequence": step.number,
+                            "role": step.role.value,
+                            "operation": step.tool,
+                            "result": step.result,
+                        },
+                        sort_keys=True,
+                    ),
+                )
             self.runs.add_event(
                 run.id,
-                "step",
+                "termination",
                 json.dumps(
                     {
-                        "sequence": step.number,
-                        "role": step.role.value,
-                        "operation": step.tool,
-                        "result": step.result,
+                        "status": status,
+                        "termination": result.termination.value,
+                        "reason": result.message,
                     },
                     sort_keys=True,
                 ),
             )
-        self.runs.add_event(
-            run.id,
-            "termination",
-            json.dumps(
-                {
-                    "status": status,
-                    "termination": result.termination.value,
-                    "reason": result.message,
-                },
-                sort_keys=True,
-            ),
-        )
-        self.runs.finish(run.id, status)
+            self.runs.finish(run.id, status)
+            if evidence is not None:
+                self.runs.add_event(run.id, "evidence", json.dumps(evidence, sort_keys=True))
 
     def get(self, run_id: str) -> tuple[Run, list, list]:
         run = self.runs.get(run_id)
