@@ -120,7 +120,17 @@ INITIAL_MIGRATION = (
     """,
 )
 
-MIGRATIONS = (INITIAL_MIGRATION,)
+MEMORY_MIGRATION = (2, "project_memory", """
+CREATE TABLE swarmos_memory (
+    project TEXT NOT NULL,
+    task TEXT NOT NULL,
+    source_run TEXT NOT NULL REFERENCES swarmos_runs(id),
+    content TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    PRIMARY KEY(project, task)
+);
+""")
+MIGRATIONS = (INITIAL_MIGRATION, MEMORY_MIGRATION)
 REQUIRED_TABLES = {
     "swarmos_workflows",
     "swarmos_agents",

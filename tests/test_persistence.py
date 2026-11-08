@@ -23,7 +23,7 @@ def test_migrations_are_idempotent_and_keep_app_tables_namespaced(tmp_path):
         assert all(name.startswith("swarmos_") for name in tables)
         assert database.connection.execute(
             "SELECT COUNT(*) FROM swarmos_schema_migrations"
-        ).fetchone()[0] == 1
+        ).fetchone()[0] == len(persistence.MIGRATIONS)
         assert database.connection.execute(
             "SELECT COUNT(*) FROM swarmos_migration_lock"
         ).fetchone()[0] == 0
