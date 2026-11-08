@@ -13,7 +13,7 @@ def execute(history, output, project, memory_enabled=False, operations=None, pro
     run = history.start()
     started = perf_counter()
     try:
-        result = run_swarm001(Path(output).resolve() / run.id / 'fixture',
+        result = run_swarm001(Path.cwd() / '.swarmos' / 'work' / run.id[:16],
             Path(__file__).parent.parent / 'tests' / 'test_swarm001_acceptance.py',
             operations=operations, memory_hint=('; advisory: ' + recalled['content']) if recalled else '')
     except Exception as error:

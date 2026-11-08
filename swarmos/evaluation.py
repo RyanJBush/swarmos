@@ -16,7 +16,7 @@ def evaluate(output, trials=3):
         raise ValueError('trials must be between 1 and 20')
     root = Path(output).resolve() / ('evaluation-' + uuid4().hex)
     root.mkdir(parents=True)
-    baseline = root / 'unpatched'
+    baseline = Path.cwd() / '.swarmos' / 'work' / uuid4().hex[:16]
     create_swarm001_fixture(baseline)
     test = Path(__file__).parent.parent / 'tests' / 'test_swarm001_acceptance.py'
     raw = subprocess.run([sys.executable, '-m', 'pytest', '-q', str(test)],

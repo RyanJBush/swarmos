@@ -72,3 +72,7 @@ remote CI verification after the owner authorizes pushing.
 Final suite: **48 passed, 1 skipped in 21.96 s** using the isolated local environment. git diff --check completed successfully.
 
 Publication audit found ignored generated evidence and bytecode in inherited pre-checkpoint history. A separate publication repository imports the clean checkpoint tree and replays the focused development commits; the full original history is preserved in the development checkout. No inherited generated artifact is reachable from the publication branch.
+
+A later clean-publication-checkout test exposed a second long-path case at Git initialization (47 passed, 1 failed, 1 skipped). Fixtures were moved to short project-local `.swarmos/work/` paths; the final clean-checkout result below supersedes that failed attempt.
+
+Final clean publication checkout after the fixture-path fix: **48 passed, 1 skipped in 23.53 s**. A fresh three-trial evaluation passed 3/3 per arm, with 0 versus 3 memory hits and five steps per run. Median execution times were 936.650 ms (off) and 937.184 ms (on), illustrating why no latency improvement is claimed. Report: `evidence/final/evaluation-bc51009b5d0846e08ab4288967ffef25/evaluation.json` in the publication checkout.

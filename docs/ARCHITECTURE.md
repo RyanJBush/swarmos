@@ -67,3 +67,5 @@ Do not infer generalization, LLM quality, or causal speedups from this microbenc
 No hosted service, model API, vector database, network listener, tool marketplace,
 recursive agent loop, or arbitrary patch generator. The MCP interface only inspects
 finalized evidence; proposal loading is a local approval-controlled interface.
+
+Disposable fixture repositories live under `.swarmos/work/` with unique short identifiers, separately from arbitrarily nested evidence output directories. This avoids a Windows Git initialization path-length failure observed during clean-checkout testing. These fixtures are ignored and retained for local inspection; they are not database evidence. Extremely long project-root paths remain a host limitation.
