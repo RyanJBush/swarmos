@@ -1,71 +1,115 @@
 # SwarmOS
 
-## Phase 1: bounded coding controller
+**A bounded coding-workflow demonstrator with durable, inspectable evidence.**
 
-SwarmOS Phase 1 implements a deterministic controller with three roles:
+SwarmOS runs Planner → Implementer → Reviewer against a disposable Git repository.
+A fixed SWARM-001 patch must produce a real diff and pass the trusted acceptance
+test before the controller approves the run. SQLite records results, timed traces,
+and project-scoped advisory memory; an offline HTML timeline makes each run inspectable.
 
-- **Planner** can inspect the workspace and propose a plan.
-- **Implementer** can make one validated patch attempt.
-- **Reviewer** can inspect the workspace and run the fixed `pytest` action.
+This is a deterministic agent-workflow engineering MVP. It does **not** generate
+arbitrary code, use an LLM, or provide an operating-system sandbox. The planner's
+inspection action is currently a validated path acknowledgement, not semantic repo analysis.
 
-The controller enforces role-specific tool allowlists, planner-to-reviewer role
-ordering, a maximum of 8 steps, and a maximum of 1 patch attempt. Unauthorized
-tools, unsafe paths, invalid operations, and failed actions terminate the run
-with an explicit code. SWARM-001 uses a disposable Git fixture and one
-deterministic implementation for `src/labels.py`; the reviewer requires a real
-Git diff and passing acceptance evidence outside the fixture.
+## Quick start
 
-Run the deterministic evidence demo:
-
-```powershell
-.\.venv\Scripts\python.exe -m swarmos demo --output evidence/my-demo
-```
-
-The command writes `run-summary.json` and `swarm001.diff` with the roles, tools,
-bounded results, termination code, and actual fixture diff. Run tests with:
+Requirements: Git on PATH and Python 3.11+. Run commands from this source checkout;
+the reviewer deliberately uses the trusted test file in `tests/`.
+No API key, cloud account, Docker, or paid service is required.
 
 ```powershell
+python -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -r requirements-dev.txt
 .\.venv\Scripts\python.exe -m pytest tests -q
+.\.venv\Scripts\python.exe -m swarmos demo --project portfolio --memory on
 ```
 
-## Phase 2A: persistent run history
+On macOS/Linux use `.venv/bin/python` instead of `.venv\Scripts\python.exe`.
+The CLI prints a run ID and a `timeline.html` path. Open that file in your browser.
+Run the demo again to observe a memory hit with the same five review-gated steps.
+The default is memory **off**; use a stable `--project` identifier to scope memory.
 
-Each demo run is also recorded in the existing SQLite persistence layer. The
-default database is `.swarmos/runs.sqlite3`; use `--database` to select another
-project-local path:
+## Inspect and recover
+
+Replace `RUN_ID` with the printed UUID. All commands accept `--database PATH` and
+`--output DIRECTORY`; defaults are `.swarmos/runs.sqlite3` and `evidence/demo`.
 
 ```powershell
-.\.venv\Scripts\python.exe -m swarmos demo `
-  --output evidence/my-demo --database .swarmos\runs.sqlite3
-.\.venv\Scripts\python.exe -m swarmos inspect `
-  --run-id <run-id> --database .swarmos\runs.sqlite3
-.\.venv\Scripts\python.exe -m swarmos list --database .swarmos\runs.sqlite3
+.\.venv\Scripts\python.exe -m swarmos list
+.\.venv\Scripts\python.exe -m swarmos inspect --run-id RUN_ID
+.\.venv\Scripts\python.exe -m swarmos verify --run-id RUN_ID
+.\.venv\Scripts\python.exe -m swarmos export --run-id RUN_ID
+.\.venv\Scripts\python.exe -m swarmos timeline --run-id RUN_ID
+.\.venv\Scripts\python.exe -m swarmos memory-clear --project portfolio
 ```
 
-The demo prints the run ID. `inspect` shows the persisted status, timestamps,
-five ordered controller steps on success, and the termination event. Failed
-and repeated runs are stored as failed runs and return a nonzero exit status.
-Existing evidence files are preserved; later runs use run-specific filenames.
-SQLite databases and generated evidence are excluded from Git. Persistence is
-run history, not reusable agent memory, and this phase still has no MCP,
-dashboard, or real-LLM execution.
+Run metadata, steps, traces, termination, and the evidence payload finalize in one
+transaction. Exported JSON/diff files are derived copies, with a manifest published
+last. `verify` compares them against SQLite; `export` repairs missing or altered
+copies. Successful execution does not imply successful export. A failed export
+returns a nonzero exit status and identifies the durable run for retry.
 
-This is simulated role behavior, not a real LLM coding agent. It has no shell
-execution, network access, credential access, arbitrary repository writes,
-persistent memory, MCP integration, observability dashboard, or real LLM
-integration. The deterministic prototype must not be represented as a secure
-real-model coding agent. The only subprocesses are fixed `git` and `pytest`
-commands used by the trusted fixture workflow.
+A process killed before finalization leaves a `running` row. After confirming that
+its process has stopped, explicitly mark it failed with `recover --run-id RUN_ID`.
+Partial in-flight steps are not recoverable; this MVP records traces at finalization.
+Do not recover a live run. Older checkpoint runs have no durable evidence payload;
+they remain inspectable but cannot be exported retroactively.
 
-The fixture now implements the deterministic SWARM-001
-`normalize_label(text: str) -> str` behavior: trimming, ASCII-compatible
-lowercasing, internal whitespace replacement, underscore preservation, Unicode
-preservation, and empty-input rejection.
+## Evaluate
 
-The fixture must be created at a new, unused path by the controller and carries
-a controller-owned marker. Acceptance is pinned by canonical path and SHA-256
-content, and requires exactly one passed test with zero skips. These checks are
-application-level validation only; Windows filesystem checks remain vulnerable
-to time-of-check/time-of-use races and do not provide OS-enforced sandbox
-confinement. Pytest output parsing and application-level fixture ownership are
-also validation signals, not security boundaries for untrusted generated code.
+```powershell
+.\.venv\Scripts\python.exe -m swarmos evaluate --trials 3 --output evidence/benchmark
+```
+
+The evaluator checks an unpatched fixture baseline, warms two independent arms,
+alternates memory-on/off execution order, and saves raw run evidence plus metrics.
+Memory-on and memory-off use the same fixed patch and acceptance gates. Memory can
+show persistence and retrieval, but this design does not demonstrate better coding
+quality or fewer tool calls. See [measured results](docs/VALIDATION.md).
+
+## Bounded integrations
+
+An external assistant can propose the five JSON operations in
+[examples/proposal.json](examples/proposal.json). Review the exact file, then approve
+its SHA-256 digest. The digest binds approval to those bytes; unknown fields, changed
+roles, arbitrary commands, and arbitrary patches are rejected before execution.
+
+```powershell
+$proposalHash = (Get-FileHash examples/proposal.json -Algorithm SHA256).Hash.ToLower()
+.\.venv\Scripts\python.exe -m swarmos demo --project portfolio --proposal examples/proposal.json --approve-proposal $proposalHash
+```
+
+Computing a hash is not a substitute for reviewing the file. This is an offline
+handoff adapter, not a verified live Claude/OpenAI/Ollama integration.
+
+A minimal read-only MCP stdio server exposes **only `inspect_run`** in the configured
+project. It opens SQLite read-only, has bounded input/output sizes, and cannot run
+the controller, read arbitrary files, alter memory, or install tools.
+
+```powershell
+.\.venv\Scripts\python.exe -m swarmos mcp --project portfolio --database .swarmos/runs.sqlite3
+```
+
+Configure an MCP client to launch that command from this checkout. It implements
+the pinned **2025-11-25** initialization/tools subset; no claim of full protocol
+conformance or compatibility with every client is made. See [integration details](docs/INTEGRATIONS.md).
+
+## Engineering evidence
+
+- Eight-step ceiling, one patch attempt, role allowlists, exact completion sequence.
+- Trusted acceptance file integrity check, actual Git diff and pytest subprocess.
+- Transaction rollback, restart, concurrent initialization, export repair tests.
+- Project isolation, memory-off control, rejected-operation tracing, escaped HTML.
+- CI matrix for Windows/Linux and Python 3.11/3.13; remote CI awaits publication.
+
+Read the [architecture](docs/ARCHITECTURE.md), [security boundaries](SECURITY.md),
+[validation record](docs/VALIDATION.md), and [three-minute demo](docs/DEMO.md).
+
+## Publication status
+
+Continues checkpoint `eff728e2c3d5d1355c0271036202e034e62a0ef6`.
+Local focused commits are prepared; no GitHub repository has been created or pushed
+by this development session. Publication requires the owner's approval.
+Generated evidence, local databases and journals, credentials, and environments
+are excluded by `.gitignore`. No license is selected yet; choose one before
+advertising the project as open source.

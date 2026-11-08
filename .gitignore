@@ -28,3 +28,7 @@ htmlcov/
 *.sqlite3-*
 *.db-*
 *.sqlite-*
+
+*.egg-info/
+build/
+dist/

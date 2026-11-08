@@ -1,3 +1,5 @@
+> Historical planning document inherited from the original repository. Azure SQL migration is outside the local MVP scope; counts and readiness claims below are not current validation results. See docs/VALIDATION.md.
+
 # SwarmOS SQLite to Azure SQL Migration Plan
 
 ## Readiness
