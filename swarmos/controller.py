@@ -1,6 +1,8 @@
 """Deterministic, bounded controller for the Phase 1 coding workflow."""
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
+from datetime import datetime, timezone
+from time import perf_counter
 from enum import StrEnum
 from pathlib import PurePath
 import os
@@ -64,6 +66,7 @@ class ControllerResult:
     patches_attempted: int
     message: str
     diff: str = ""
+    traces: tuple[dict, ...] = ()
 
     @property
     def completed(self) -> bool:
@@ -92,6 +95,26 @@ class BoundedController:
         self._diagnostic = ""
 
     def run(self, operations: list[Operation] | tuple[Operation, ...]) -> ControllerResult:
+        self._traces = []
+        self._active = None
+        result = self._run(operations)
+        if self._active is not None:
+            self._record_trace("rejected", result.termination.value)
+        self._traces.append({"sequence": len(self._traces) + 1,
+                             "kind": "termination", "status": result.termination.value,
+                             "timestamp": datetime.now(timezone.utc).isoformat()})
+        return replace(result, traces=tuple(self._traces))
+
+    def _record_trace(self, status, detail):
+        operation, started_at, started = self._active
+        self._traces.append({"sequence": len(self._traces) + 1, "kind": "operation",
+                             "role": operation.role.value, "tool": operation.tool,
+                             "started_at": started_at,
+                             "duration_ms": round((perf_counter() - started) * 1000, 3),
+                             "status": status, "detail": detail})
+        self._active = None
+
+    def _run(self, operations: list[Operation] | tuple[Operation, ...]) -> ControllerResult:
         self._steps = []
         self._patches_attempted = 0
         self._diff = ""
@@ -109,6 +132,7 @@ class BoundedController:
         last_role_index = -1
 
         for operation in operations:
+            self._active = (operation, datetime.now(timezone.utc).isoformat(), perf_counter())
             if len(self._steps) >= self.MAX_STEPS:
                 return self._terminate(
                     TerminationCode.STEP_LIMIT_EXCEEDED,
@@ -135,6 +159,7 @@ class BoundedController:
             if isinstance(outcome, TerminationCode):
                 return self._terminate(outcome, self._failure_message(outcome))
 
+            self._record_trace("succeeded", outcome)
             self._steps.append(
                 Step(len(self._steps) + 1, operation.role, operation.tool, outcome)
             )
@@ -445,7 +470,7 @@ def create_swarm001_fixture(root: Path) -> None:
     _OWNED_FIXTURES.add(root.resolve())
 
 
-def run_swarm001(root: Path, acceptance_test: Path) -> ControllerResult:
+def run_swarm001(root: Path, acceptance_test: Path, operations=None, memory_hint="") -> ControllerResult:
     try:
         create_swarm001_fixture(root)
     except (OSError, RuntimeError, ValueError, subprocess.TimeoutExpired) as error:
@@ -456,9 +481,9 @@ def run_swarm001(root: Path, acceptance_test: Path) -> ControllerResult:
             f"fixture initialization failure: {error}",
         )
     return BoundedController(root, acceptance_test).run(
-        (
+        operations if operations is not None else (
             Operation(Role.PLANNER, "inspect_workspace", {"path": "."}),
-            Operation(Role.PLANNER, "propose_plan", {"plan": "implement SWARM-001"}),
+            Operation(Role.PLANNER, "propose_plan", {"plan": "implement SWARM-001" + memory_hint}),
             Operation(
                 Role.IMPLEMENTER,
                 "apply_patch",

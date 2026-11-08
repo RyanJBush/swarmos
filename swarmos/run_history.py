@@ -86,6 +86,8 @@ class RunHistory:
                         sort_keys=True,
                     ),
                 )
+            for trace in result.traces:
+                self.runs.add_event(run.id, "trace", json.dumps(trace, sort_keys=True))
             self.runs.add_event(
                 run.id,
                 "termination",
